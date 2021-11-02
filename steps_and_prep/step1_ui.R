@@ -10,6 +10,8 @@ library(shiny)       # for app
 library(tidymodels)  # for modeling (really only using for data right now)
 library(tidyverse)   # graphing/wrangling
 
+data("lending_club")
+
 # Find unique states and put them in alphabetical order:
 states <- 
   lending_club  %>% 

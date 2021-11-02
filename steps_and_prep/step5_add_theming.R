@@ -6,11 +6,12 @@
 # After this step, publish to shinyapps.io to make sure it works.
 
 library(shiny)       # for app
-#library(tidyverse)  # all the libs we need are in tidymodels
-library(forcats)     # need for fct_relevel - not in tidymodels
+library(tidyverse)   # for plotting and wrangling
 library(tidymodels)  # for modeling
 library(ranger)      # for random forest
 library(bslib)       # for theming
+
+data("lending_club")
 
 # This time we need this for predicting.
 lending_mod <- read_rds("../rf_final.rds")

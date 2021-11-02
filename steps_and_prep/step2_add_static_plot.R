@@ -9,10 +9,11 @@
 # This is the stage that took me the longest - due to forgotten libraries.
 
 library(shiny)       # for app
-#library(tidyverse)  # most libs we need are in tidymodels
-library(forcats)     # need for fct_relevel - not in tidymodels
+library(tidyverse)   # for plotting and wrangling
 library(tidymodels)  # for modeling
 library(ranger)      # for random forest
+
+data("lending_club")
 
 # Check to see which tidyverse packages are in tidymodels:
 # tibble(package = tidyverse_packages(), 

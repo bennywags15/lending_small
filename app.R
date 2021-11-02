@@ -1,6 +1,7 @@
-# Now we choose the variable we'd like to vary.
+# Now we add theming - the fun part!
+# Also added scrollable side panel - convenient!
 
-# Load libraries - same as in step 3. 
+# Load libraries - add bslib. I also needed to update shiny.
 
 # After this step, publish to shinyapps.io to make sure it works.
 
@@ -8,11 +9,12 @@ library(shiny)       # for app
 library(tidyverse)   # for plotting and wrangling
 library(tidymodels)  # for modeling
 library(ranger)      # for random forest
+library(bslib)       # for theming
 
 data("lending_club")
 
 # This time we need this for predicting.
-lending_mod <- read_rds("../rf_final.rds")
+lending_mod <- read_rds("rf_final.rds")
 
 # Find unique states and put them in alphabetical order:
 states <- 
@@ -61,7 +63,13 @@ stats_num <-
 # NOTE: I haven't made all the labels look nice - I should.
 
 ui <- fluidPage(
-  
+  theme = bs_theme(primary = "#123B60", 
+                   secondary = "#D44420", 
+                   base_font = list(font_google("Raleway"), "-apple-system", 
+                                   "BlinkMacSystemFont", "Segoe UI", "Helvetica Neue", "Arial", 
+                                   "sans-serif", "Apple Color Emoji", "Segoe UI Emoji", 
+                                   "Segoe UI Symbol"), 
+                   bootswatch = "sketchy"),
   # Application title
   titlePanel("Ceteris Perabus Profile"),
   
@@ -355,30 +363,28 @@ ui <- fluidPage(
 server <- function(input, output) {
   output$cp_plot <- renderPlot({
     
-    # obs from input (see code that I used above to generate this)
-    
-    obs <- tibble(funded_amnt = input$funded_amnt, 
-                  term = input$term, 
-                  int_rate = input$int_rate, 
-                  sub_grade = input$sub_grade, 
-                  addr_state = input$addr_state, 
-                  verification_status = input$verification_status, 
-                  annual_inc = input$annual_inc, 
-                  emp_length = input$emp_length, 
-                  delinq_2yrs = input$delinq_2yrs, 
-                  inq_last_6mths = input$inq_last_6mths, 
-                  revol_util = input$revol_util, 
-                  acc_now_delinq = input$acc_now_delinq, 
-                  open_il_6m = input$open_il_6m, 
-                  open_il_12m = input$open_il_12m, 
-                  open_il_24m = input$open_il_24m, 
-                  total_bal_il = input$total_bal_il, 
-                  all_util = input$all_util, 
-                  inq_fi = input$inq_fi, 
-                  inq_last_12m = input$inq_last_12m, 
-                  delinq_amnt = input$delinq_amnt,
-                  num_il_tl = input$num_il_tl, 
-                  total_il_high_credit_limit = input$total_il_high_credit_limit)
+      obs <- tibble(funded_amnt = input$funded_amnt, 
+                    term = input$term, 
+                    int_rate = input$int_rate, 
+                    sub_grade = input$sub_grade, 
+                    addr_state = input$addr_state, 
+                    verification_status = input$verification_status, 
+                    annual_inc = input$annual_inc, 
+                    emp_length = input$emp_length, 
+                    delinq_2yrs = input$delinq_2yrs, 
+                    inq_last_6mths = input$inq_last_6mths, 
+                    revol_util = input$revol_util, 
+                    acc_now_delinq = input$acc_now_delinq, 
+                    open_il_6m = input$open_il_6m, 
+                    open_il_12m = input$open_il_12m, 
+                    open_il_24m = input$open_il_24m, 
+                    total_bal_il = input$total_bal_il, 
+                    all_util = input$all_util, 
+                    inq_fi = input$inq_fi, 
+                    inq_last_12m = input$inq_last_12m, 
+                    delinq_amnt = input$delinq_amnt,
+                    num_il_tl = input$num_il_tl, 
+                    total_il_high_credit_limit = input$total_il_high_credit_limit)
     
       obs_many <- obs %>% 
       sample_n(size = 50, replace = TRUE) %>% 
