@@ -16,16 +16,22 @@ library(DALEX)
 library(DALEXtra)
 ```
 
+```{r}
+data("lending_club") # dataset
+
+lending_mod <- read_rds("../rf_final.rds")
+```
+
 
 ```{r}
-lending_mod$train  %>% 
+lending_club  %>% 
   select(where(is.numeric)) %>% 
   names()
 ```
 
 
 ```{r}
-lending_mod$train  %>% 
+lending_club  %>% 
   select(where(is.numeric)) %>% 
   pivot_longer(cols = everything(),
                names_to = "variable", 
@@ -38,7 +44,7 @@ lending_mod$train  %>%
 ```
 
 ```{r}
-lending_mod$train  %>% 
+lending_club  %>% 
   select(!where(is.numeric)) %>% 
   pivot_longer(cols = everything(),
                names_to = "variable", 
@@ -49,7 +55,7 @@ lending_mod$train  %>%
 
 ```{r}
 states <- 
-  lending_mod$train  %>% 
+  lending_club %>% 
   select(addr_state) %>% 
   distinct(addr_state) %>% 
   arrange(addr_state) %>% 
@@ -57,16 +63,11 @@ states <-
 ```
 
 ```{r}
-obs <- lending_mod$train %>% slice(1)
-predict(lending_mod, new_data = obs, type = "prob")
-```
-
-
-```{r}
-data("lending_club")
-stack_explain <- explain_tidymodels(lending_mod, 
-                                    data = lending_club %>% select(-Class),
-                                    y = lending_club %>% select(Class))
+paste(names(lending_club), 
+       " = input$", 
+       names(lending_club),
+       sep = "",
+       collapse = ", ")
 ```
 
 

@@ -7,15 +7,12 @@
 # Load libraries - for now I only need shiny & tidyverse
 
 library(shiny)       # for app
+library(tidymodels)  # for modeling (really only using for data right now)
 library(tidyverse)   # graphing/wrangling
-
-# I'm loading this because the training dataset is in this output.
-# And I want to use the training data.
-lending_mod <- readRDS("../lending_stack.rds")
 
 # Find unique states and put them in alphabetical order:
 states <- 
-  lending_mod$train  %>% 
+  lending_club  %>% 
   select(addr_state) %>% 
   distinct(addr_state) %>% 
   arrange(addr_state) %>% 
@@ -24,7 +21,7 @@ states <-
 # Fix employment length
 
 emp_len <- 
-  lending_mod$train %>% 
+  lending_club %>% 
   select(emp_length) %>% 
   distinct() %>% 
   mutate(emp_length = fct_relevel(emp_length,
@@ -37,7 +34,7 @@ emp_len <-
 # Find min's, max's, and median's for quantitative vars:
 
 stats_num <-
-  lending_mod$train  %>% 
+  lending_club  %>% 
   select(where(is.numeric)) %>% 
   pivot_longer(cols = everything(),
                names_to = "variable", 
@@ -62,6 +59,11 @@ ui <- fluidPage(
   # Sidebar with inputs
   sidebarLayout(
     sidebarPanel(
+      # added this for scrollable side panel:
+      tags$head(tags$style(
+        type = 'text/css',
+        'form.well { max-height: 600px; overflow-y: auto; }'
+      )),
       sliderInput(inputId = "acc_now_delinq",
                   label = "Number of accounts delinquent:",
                   min = stats_num %>% 
@@ -117,6 +119,19 @@ ui <- fluidPage(
                     filter(variable =="delinq_2yrs") %>% 
                     pull(med_val), 
                   step = 1, 
+                  round = TRUE),
+      sliderInput(inputId = "delinq_amnt",
+                  label = "Past due amount owed:",
+                  min = stats_num %>% 
+                    filter(variable =="delinq_amnt") %>% 
+                    pull(min_val),
+                  max = stats_num %>% 
+                    filter(variable =="delinq_amnt") %>% 
+                    pull(max_val),
+                  value = stats_num %>% 
+                    filter(variable =="delinq_amnt") %>% 
+                    pull(med_val), 
+                  step = 1000, 
                   round = TRUE),
       sliderInput(inputId = "funded_amnt",
                   label = "Funded amount:",
@@ -291,21 +306,21 @@ ui <- fluidPage(
                   choices = emp_len),
       selectInput(inputId = "sub_grade", 
                   label = "LC assigned loan subgrade:", 
-                  choices = lending_mod$train %>% 
+                  choices = lending_club %>% 
                     select(sub_grade) %>% 
                     distinct() %>% 
                     arrange(sub_grade) %>% 
                     pull(sub_grade)),
       selectInput(inputId = "term", 
                   label = "Term:", 
-                  choices = lending_mod$train %>% 
+                  choices = lending_club %>% 
                     select(term) %>% 
                     distinct() %>% 
                     arrange(term) %>% 
                     pull(term)),
       selectInput(inputId = "verification_status", 
                   label = "Verification Status:", 
-                  choices = lending_mod$train %>% 
+                  choices = lending_club %>% 
                     select(verification_status) %>% 
                     distinct() %>% 
                     arrange(verification_status) %>% 

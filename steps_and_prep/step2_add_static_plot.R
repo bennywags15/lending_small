@@ -4,18 +4,15 @@
 # Load libraries - we need more! 
 # And be careful for hidden libraries you need,
 # like those needed "behind the scenes" for modeling in tidymodels.
-# If you used knn, you will need the kknn library, for example.  
+# If you used random forest, you will need the ranger library, for example.  
 # After this step, publish to shinyapps.io to make sure it works.
 # This is the stage that took me the longest - due to forgotten libraries.
 
 library(shiny)       # for app
-#library(tidyverse)  # all the libs we need are in tidymodels
+#library(tidyverse)  # most libs we need are in tidymodels
 library(forcats)     # need for fct_relevel - not in tidymodels
 library(tidymodels)  # for modeling
-library(stacks)      # for stacking
 library(ranger)      # for random forest
-library(glmnet)      # for lasso
-library(rpart)       # for decision tree
 
 # Check to see which tidyverse packages are in tidymodels:
 # tibble(package = tidyverse_packages(), 
@@ -23,12 +20,11 @@ library(rpart)       # for decision tree
 #          tidymodels_packages())
 
 # This time we need this for predicting.
-# And I'm still using the training data from it
-lending_mod <- readRDS("../lending_stack.rds")
+lending_mod <- read_rds("../rf_final.rds")
 
 # Find unique states and put them in alphabetical order:
 states <- 
-  lending_mod$train  %>% 
+  lending_club  %>% 
   select(addr_state) %>% 
   distinct(addr_state) %>% 
   arrange(addr_state) %>% 
@@ -37,7 +33,7 @@ states <-
 # Fix employment length
 
 emp_len <- 
-  lending_mod$train %>% 
+  lending_club %>% 
   select(emp_length) %>% 
   distinct() %>% 
   mutate(emp_length = fct_relevel(emp_length,
@@ -50,7 +46,7 @@ emp_len <-
 # Find min's, max's, and median's for quantitative vars:
 
 stats_num <-
-  lending_mod$train  %>% 
+  lending_club  %>% 
   select(where(is.numeric)) %>% 
   pivot_longer(cols = everything(),
                names_to = "variable", 
@@ -71,6 +67,11 @@ ui <- fluidPage(
   # Sidebar with inputs
   sidebarLayout(
     sidebarPanel(
+      # added this for scrollable side panel:
+      tags$head(tags$style(
+        type = 'text/css',
+        'form.well { max-height: 600px; overflow-y: auto; }'
+      )),
       sliderInput(inputId = "acc_now_delinq",
                   label = "Number of accounts delinquent:",
                   min = stats_num %>% 
@@ -126,6 +127,19 @@ ui <- fluidPage(
                     filter(variable =="delinq_2yrs") %>% 
                     pull(med_val), 
                   step = 1, 
+                  round = TRUE),
+      sliderInput(inputId = "delinq_amnt",
+                  label = "Past due amount owed:",
+                  min = stats_num %>% 
+                    filter(variable =="delinq_amnt") %>% 
+                    pull(min_val),
+                  max = stats_num %>% 
+                    filter(variable =="delinq_amnt") %>% 
+                    pull(max_val),
+                  value = stats_num %>% 
+                    filter(variable =="delinq_amnt") %>% 
+                    pull(med_val), 
+                  step = 1000, 
                   round = TRUE),
       sliderInput(inputId = "funded_amnt",
                   label = "Funded amount:",
@@ -300,21 +314,21 @@ ui <- fluidPage(
                   choices = emp_len),
       selectInput(inputId = "sub_grade", 
                   label = "LC assigned loan subgrade:", 
-                  choices = lending_mod$train %>% 
+                  choices = lending_club %>% 
                     select(sub_grade) %>% 
                     distinct() %>% 
                     arrange(sub_grade) %>% 
                     pull(sub_grade)),
       selectInput(inputId = "term", 
                   label = "Term:", 
-                  choices = lending_mod$train %>% 
+                  choices = lending_club %>% 
                     select(term) %>% 
                     distinct() %>% 
                     arrange(term) %>% 
                     pull(term)),
       selectInput(inputId = "verification_status", 
                   label = "Verification Status:", 
-                  choices = lending_mod$train %>% 
+                  choices = lending_club %>% 
                     select(verification_status) %>% 
                     distinct() %>% 
                     arrange(verification_status) %>% 
@@ -343,7 +357,7 @@ server <- function(input, output) {
     # For now, just a static point
     # Replace later with obs from ui
     # And eventually replace annual_inc with variable of interest
-    obs_many <- lending_mod$train %>% 
+    obs_many <- lending_club %>% 
       slice(4) %>% 
       sample_n(size = 50, replace = TRUE) %>% 
       select(-annual_inc) %>% 

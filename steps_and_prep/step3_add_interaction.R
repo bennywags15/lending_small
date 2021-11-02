@@ -8,18 +8,14 @@ library(shiny)       # for app
 #library(tidyverse)  # all the libs we need are in tidymodels
 library(forcats)     # need for fct_relevel - not in tidymodels
 library(tidymodels)  # for modeling
-library(stacks)      # for stacking
 library(ranger)      # for random forest
-library(glmnet)      # for lasso
-library(rpart)       # for decision tree
 
 # This time we need this for predicting.
-# And I'm still using the training data from it
-lending_mod <- readRDS("../lending_stack.rds")
+lending_mod <- read_rds("../rf_final.rds")
 
 # Find unique states and put them in alphabetical order:
 states <- 
-  lending_mod$train  %>% 
+  lending_club  %>% 
   select(addr_state) %>% 
   distinct(addr_state) %>% 
   arrange(addr_state) %>% 
@@ -28,7 +24,7 @@ states <-
 # Fix employment length
 
 emp_len <- 
-  lending_mod$train %>% 
+  lending_club %>% 
   select(emp_length) %>% 
   distinct() %>% 
   mutate(emp_length = fct_relevel(emp_length,
@@ -41,7 +37,7 @@ emp_len <-
 # Find min's, max's, and median's for quantitative vars:
 
 stats_num <-
-  lending_mod$train  %>% 
+  lending_club  %>% 
   select(where(is.numeric)) %>% 
   pivot_longer(cols = everything(),
                names_to = "variable", 
@@ -54,9 +50,9 @@ stats_num <-
 # Used for creating observation. Run and then copy and paste, without Class.  
 # Works because I used variable name as InputId.
 
-# paste(names(lending_mod$train), 
+# paste(names(lending_club), 
 #       " = input$", 
-#       names(lending_mod$train),
+#       names(lending_club),
 #       sep = "",
 #       collapse = ", ")
 
@@ -71,6 +67,11 @@ ui <- fluidPage(
   # Sidebar with inputs
   sidebarLayout(
     sidebarPanel(
+      # added this for scrollable side panel:
+      tags$head(tags$style(
+        type = 'text/css',
+        'form.well { max-height: 600px; overflow-y: auto; }'
+      )),
       sliderInput(inputId = "acc_now_delinq",
                   label = "Number of accounts delinquent:",
                   min = stats_num %>% 
@@ -126,6 +127,19 @@ ui <- fluidPage(
                     filter(variable =="delinq_2yrs") %>% 
                     pull(med_val), 
                   step = 1, 
+                  round = TRUE),
+      sliderInput(inputId = "delinq_amnt",
+                  label = "Past due amount owed:",
+                  min = stats_num %>% 
+                    filter(variable =="delinq_amnt") %>% 
+                    pull(min_val),
+                  max = stats_num %>% 
+                    filter(variable =="delinq_amnt") %>% 
+                    pull(max_val),
+                  value = stats_num %>% 
+                    filter(variable =="delinq_amnt") %>% 
+                    pull(med_val), 
+                  step = 1000, 
                   round = TRUE),
       sliderInput(inputId = "funded_amnt",
                   label = "Funded amount:",
@@ -300,21 +314,21 @@ ui <- fluidPage(
                   choices = emp_len),
       selectInput(inputId = "sub_grade", 
                   label = "LC assigned loan subgrade:", 
-                  choices = lending_mod$train %>% 
+                  choices = lending_club %>% 
                     select(sub_grade) %>% 
                     distinct() %>% 
                     arrange(sub_grade) %>% 
                     pull(sub_grade)),
       selectInput(inputId = "term", 
                   label = "Term:", 
-                  choices = lending_mod$train %>% 
+                  choices = lending_club %>% 
                     select(term) %>% 
                     distinct() %>% 
                     arrange(term) %>% 
                     pull(term)),
       selectInput(inputId = "verification_status", 
                   label = "Verification Status:", 
-                  choices = lending_mod$train %>% 
+                  choices = lending_club %>% 
                     select(verification_status) %>% 
                     distinct() %>% 
                     arrange(verification_status) %>% 
@@ -340,11 +354,9 @@ ui <- fluidPage(
 server <- function(input, output) {
   output$cp_plot <- renderPlot({
     
-    # For now, just a static point
-    # Replace later with obs from ui
-    # And eventually replace annual_inc with variable of interest
+    # Eventually replace annual_inc with variable of interest
+    # obs from input (see code that I used above to generate this)
       
-    
       obs <- tibble(funded_amnt = input$funded_amnt, 
                     term = input$term, 
                     int_rate = input$int_rate, 
@@ -364,6 +376,7 @@ server <- function(input, output) {
                     all_util = input$all_util, 
                     inq_fi = input$inq_fi, 
                     inq_last_12m = input$inq_last_12m, 
+                    delinq_amnt = input$delinq_amnt,
                     num_il_tl = input$num_il_tl, 
                     total_il_high_credit_limit = input$total_il_high_credit_limit)
     
