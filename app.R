@@ -10,6 +10,8 @@ library(tidyverse)   # for plotting and wrangling
 library(tidymodels)  # for modeling
 library(ranger)      # for random forest
 library(bslib)       # for theming
+library(shinyWidgets) #for more theming 
+
 
 data("lending_club")
 
@@ -63,15 +65,17 @@ stats_num <-
 # NOTE: I haven't made all the labels look nice - I should.
 
 ui <- fluidPage(
-  theme = bs_theme(primary = "#123B60", 
+  theme = bs_theme(primary = "#db7d76", 
                    secondary = "#D44420", 
                    base_font = list(font_google("Raleway"), "-apple-system", 
                                    "BlinkMacSystemFont", "Segoe UI", "Helvetica Neue", "Arial", 
                                    "sans-serif", "Apple Color Emoji", "Segoe UI Emoji", 
                                    "Segoe UI Symbol"), 
-                   bootswatch = "sketchy"),
+                   bootswatch = "lux",
+                   bg= "#ebe2e1",
+                   fg = "#db7d76"),
   # Application title
-  titlePanel("Ceteris Perabus Profile"),
+  titlePanel("Ceteris Paribus Profile"),
   
   # Sidebar with inputs
   sidebarLayout(
@@ -436,7 +440,10 @@ server <- function(input, output) {
       geom_line() +
       labs(title = "Predicted probability of loan fully paid back \nor currently on-time",
            y = NULL) +
-      theme_minimal()
+      #theme_minimal()+
+      theme(panel.background = element_rect(fill = "#ebe2e1"),
+            panel.grid.major = element_line(colour = "white"),
+            panel.grid.minor = element_line(colour = "white"))
       }
   })
 }
